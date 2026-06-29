@@ -9,6 +9,13 @@ outputs `cmd_vel`).
 > elevation-map / navigation stack meant to run on the real robot (or on top of
 > any source publishing a 3D `/pointcloud`).
 
+## 👉 Deploying on the real GO2-W
+
+**Read [docker/README_ROBOT.md](docker/README_ROBOT.md)** — full step-by-step
+guide: build the lightweight ARM image on the robot, run the container, wire it
+to the robot's `/utlidar/cloud` + `/sportmodestate`, launch, send goals, and tune
+the costmap live. Start there.
+
 ## Packages (`ros2_ws/src/`)
 
 | Package | Role |

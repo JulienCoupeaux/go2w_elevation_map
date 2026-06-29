@@ -20,9 +20,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       ros-humble-navigation2 \
       ros-humble-nav2-bringup \
       ros-humble-nav2-mppi-controller \
-      ros-humble-grid-map \
       ros-humble-grid-map-msgs \
       ros-humble-grid-map-rviz-plugin \
+      ros-humble-rviz2 \
       ros-humble-rmw-cyclonedds-cpp \
       ros-humble-tf2-ros \
       ros-humble-tf2-tools \
