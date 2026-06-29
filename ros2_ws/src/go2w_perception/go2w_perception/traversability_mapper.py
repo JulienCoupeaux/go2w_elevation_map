@@ -51,12 +51,15 @@ Z_MAX =  2.5               # m — au-dessus du robot, ignore
 # moyenne d'un escalier reste montable (et le vrai go2w grimpe en mode
 # nomad). Mesurer la pente sur une fenetre repartit aussi le denivele sur
 # la distance horizontale -> robuste a l'occlusion des marches du fond.
+# Seuils cales sur les SPECS OFFICIELLES du go2w :
+#   - pente max franchissable : 35 deg
+#   - drop / marche max        : < 70 cm
 SLOPE_WINDOW    = 0.30    # m — demi-fenetre du calcul de pente (~ empattement)
-SLOPE_FLAT_DEG  = 15.0    # deg — sous ce seuil : sol plat, cout 0
-SLOPE_CLIMB_DEG = 42.0    # deg — limite confortable d'escalade (escaliers) : reste bon marche
+SLOPE_FLAT_DEG  = 10.0    # deg — sous ce seuil : sol plat, cout 0
+SLOPE_CLIMB_DEG = 28.0    # deg — plateau bas-cout confortable, sous la limite de 35
 COST_AT_CLIMB   = 25      # cout a SLOPE_CLIMB_DEG (franchissable, faiblement penalise)
-SLOPE_MAX_DEG   = 55.0    # deg — pente max absolue ; au-dela : letal
-ABS_STEP_LETHAL = 0.55    # m — garde-fou : falaise verticale (mur) > ca = letal
+SLOPE_MAX_DEG   = 35.0    # deg — spec go2w : pente max franchissable ; au-dela : letal
+ABS_STEP_LETHAL = 0.70    # m — spec go2w : drop/marche max franchissable ; au-dela : letal
 
 PUBLISH_HZ = 5.0
 
