@@ -69,6 +69,16 @@ class TraversabilityMapper(Node):
     def __init__(self):
         super().__init__('traversability_mapper')
 
+        # ── Parametres de franchissabilite (tunables en live, sans rebuild) ──
+        # Defauts = specs go2w (pente max 35 deg, drop max 70 cm). Modifiables
+        # au lancement (-p) ou a chaud via `ros2 param set`.
+        self.declare_parameter('slope_window', SLOPE_WINDOW)
+        self.declare_parameter('slope_flat_deg', SLOPE_FLAT_DEG)
+        self.declare_parameter('slope_climb_deg', SLOPE_CLIMB_DEG)
+        self.declare_parameter('cost_at_climb', COST_AT_CLIMB)
+        self.declare_parameter('slope_max_deg', SLOPE_MAX_DEG)
+        self.declare_parameter('abs_step_lethal', ABS_STEP_LETHAL)
+
         self.NX = int(round(SIZE_X / RESOLUTION))   # cellules en x
         self.NY = int(round(SIZE_Y / RESOLUTION))   # cellules en y
 
@@ -212,29 +222,38 @@ class TraversabilityMapper(Node):
         E = self.elevation
         known = ~np.isnan(E)
 
+        # Parametres lus a chaque cycle -> tunables a chaud via `ros2 param set`.
+        p = self.get_parameter
+        slope_window = float(p('slope_window').value)
+        slope_flat   = float(p('slope_flat_deg').value)
+        slope_climb  = float(p('slope_climb_deg').value)
+        cost_climb   = float(p('cost_at_climb').value)
+        slope_max    = float(p('slope_max_deg').value)
+        abs_step     = float(p('abs_step_lethal').value)
+
         # Pente globale sur une fenetre ~ empattement (difference centrale).
         # Repartit le denivele sur la distance horizontale : un escalier
         # regulier lit comme une rampe, pas comme une suite de falaises.
-        W = max(1, int(round(SLOPE_WINDOW / RESOLUTION)))
+        W = max(1, int(round(slope_window / RESOLUTION)))
         Ef = self._fill_nan(E)
         gx = (np.roll(Ef, -W, 1) - np.roll(Ef, W, 1)) / (2 * W * RESOLUTION)
         gy = (np.roll(Ef, -W, 0) - np.roll(Ef, W, 0)) / (2 * W * RESOLUTION)
         slope_deg = np.degrees(np.arctan(np.hypot(gx, gy)))
 
         # Cout gradue en deux segments :
-        #  - SLOPE_FLAT..SLOPE_CLIMB : plateau bas-cout (0..COST_AT_CLIMB), terrain
-        #    franchissable par le go2w (escaliers) -> faiblement penalise pour que
-        #    MPPI/planner accepte de passer dessus plutot que de contourner.
-        #  - SLOPE_CLIMB..SLOPE_MAX  : montee rapide (COST_AT_CLIMB..99) vers le letal.
+        #  - slope_flat..slope_climb : plateau bas-cout (0..cost_climb), terrain
+        #    franchissable par le go2w -> faiblement penalise pour que MPPI/planner
+        #    accepte de passer dessus plutot que de contourner.
+        #  - slope_climb..slope_max  : montee rapide (cost_climb..99) vers le letal.
         cost = np.zeros_like(E)
         seg1 = np.clip(
-            (slope_deg - SLOPE_FLAT_DEG) / (SLOPE_CLIMB_DEG - SLOPE_FLAT_DEG),
-            0.0, 1.0) * COST_AT_CLIMB
-        seg2 = COST_AT_CLIMB + np.clip(
-            (slope_deg - SLOPE_CLIMB_DEG) / (SLOPE_MAX_DEG - SLOPE_CLIMB_DEG),
-            0.0, 1.0) * (99 - COST_AT_CLIMB)
-        cost = np.where(slope_deg <= SLOPE_CLIMB_DEG, seg1, seg2)
-        cost = np.where(slope_deg >= SLOPE_MAX_DEG, 100, cost)
+            (slope_deg - slope_flat) / (slope_climb - slope_flat),
+            0.0, 1.0) * cost_climb
+        seg2 = cost_climb + np.clip(
+            (slope_deg - slope_climb) / (slope_max - slope_climb),
+            0.0, 1.0) * (99 - cost_climb)
+        cost = np.where(slope_deg <= slope_climb, seg1, seg2)
+        cost = np.where(slope_deg >= slope_max, 100, cost)
 
         # Garde-fou : vraie falaise verticale (mur) -> letal, quelle que soit
         # la pente lissee. max |dz| vers les 4 voisins immediats.
@@ -249,7 +268,7 @@ class TraversabilityMapper(Node):
             dz = np.abs(E - shifted)
             valid = known & ~np.isnan(shifted)
             step = np.where(valid & (dz > step), dz, step)
-        cost = np.where(step >= ABS_STEP_LETHAL, 100, cost)
+        cost = np.where(step >= abs_step, 100, cost)
 
         cost = cost.astype(np.int16)
         cost[~known] = -1          # inconnu
