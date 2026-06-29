@@ -46,10 +46,11 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('use_rviz', default_value='true'),
-        # Topic du nuage LiDAR Hesai (PandarXT-16). VERIFIER sur le robot avec
-        # `ros2 topic list` — driver koki67/go2w-hesai-lidar-driver, frame 'hesai_lidar'.
+        # Topic du nuage LiDAR. Le Go2 publie nativement /utlidar/cloud
+        # (sensor_msgs/PointCloud2, frame 'utlidar_lidar') — pas besoin du driver
+        # Hesai separe. Override possible si on veut /utlidar/cloud_base, etc.
         DeclareLaunchArgument('pointcloud_topic',
-                              default_value='/hesai_node/points_raw'),
+                              default_value='/utlidar/cloud'),
 
         # ── Localisation : etat Unitree -> odom + TF ─────────────────
         Node(
@@ -75,21 +76,26 @@ def generate_launch_description():
             output='screen',
         ),
 
-        # ── TF statique base_link->hesai_lidar (extrinseque LiDAR — A CALIBRER) ──
-        # Pose de montage REELLE du Hesai sur le go2w. Valeur [0,0,0.3] = simple
-        # placeholder ; mesurer/calibrer x,y,z + orientation sur le robot.
+        # ── TF statique base_link->utlidar_lidar (extrinseque LiDAR) ──
+        # Extrinseque XT-16 dans le repere IMU du Go2 : (0.171, 0, 0.0908),
+        # rotation identite. Notre base_link EST le repere IMU (odom->base_link
+        # construit depuis position+quaternion IMU du SportModeState), donc la
+        # valeur s'applique directement. args = x y z yaw pitch roll parent child.
+        # NB : si le robot publie deja un /tf parent pour 'utlidar_lidar',
+        # RETIRER ce node (un frame ne peut avoir qu'un seul parent).
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
             name='static_base_lidar',
-            arguments=['0', '0', '0.3', '0', '0', '0', 'base_link', 'hesai_lidar'],
+            arguments=['0.171', '0', '0.0908', '0', '0', '0',
+                       'base_link', 'utlidar_lidar'],
             output='screen',
         ),
 
         # ── Perception 2.5D ──────────────────────────────────────────
-        # Le mapper lit la frame du nuage (msg.header.frame_id), donc le nuage
-        # peut etre en 'hesai_lidar' : tf2 compose odom<-base_link<-hesai_lidar.
-        # On remappe /pointcloud vers le topic reel du driver Hesai.
+        # Le mapper lit la frame du nuage (msg.header.frame_id = utlidar_lidar) :
+        # tf2 compose odom<-base_link<-utlidar_lidar. /pointcloud est remappe
+        # vers le topic LiDAR reel du robot.
         Node(
             package='go2w_perception',
             executable='traversability_mapper',
