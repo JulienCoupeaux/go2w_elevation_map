@@ -81,21 +81,25 @@ Package: `go2w_robot_bridge`.
 # 0. Network: source unitree_ros2, CYCLONEDDS_URI on the wired NIC (see repo README)
 #    Confirm comms:  ros2 topic echo /sportmodestate   (should stream)
 
-# 1. Start the LiDAR 3D driver so it publishes /pointcloud  (manufacturer driver)
+# 1. Start the Hesai LiDAR driver (PandarXT-16) — koki67/go2w-hesai-lidar-driver
+ros2 launch hesai_lidar hesai_lidar_launch.py
+#    Verify it publishes:  ros2 topic list | grep -i point   (expected
+#    /hesai_node/points_raw, frame_id 'hesai_lidar')  +  ros2 topic hz <topic>
 
 # 2. Put the robot up and ready to walk (Unitree app / joystick, or a one-shot
 #    BalanceStand request). The robot must be STANDING before any Move.
 
-# 3. Launch the whole stack
-ros2 launch go2w_robot_bridge robot_bringup.launch.py use_rviz:=true
+# 3. Launch the whole stack (pass the real cloud topic if it differs)
+ros2 launch go2w_robot_bridge robot_bringup.launch.py use_rviz:=true \
+     pointcloud_topic:=/hesai_node/points_raw
 
 # 4. Set a goal in RViz ("Nav2 Goal"), a couple of meters ahead, flat ground first.
 ```
 
 `robot_bringup.launch.py` starts: `sportmode_to_odom`, static `map→odom`,
-static `base_link→lidar` (extrinsic placeholder), `traversability_mapper`,
-`cmd_vel_to_sport`, and Nav2 (controller/planner/behavior/bt_navigator +
-lifecycle autostart), + RViz.
+static `base_link→hesai_lidar` (extrinsic placeholder), `traversability_mapper`
+(`/pointcloud` remapped to `pointcloud_topic`), `cmd_vel_to_sport`, and Nav2
+(controller/planner/behavior/bt_navigator + lifecycle autostart), + RViz.
 
 ---
 
@@ -116,12 +120,14 @@ lifecycle autostart), + RViz.
 
 ## 6. Known integration points / risks to verify with the robot
 
-- **LiDAR frame**: `traversability_mapper` currently assumes the cloud is in
-  `base_link`. The real LiDAR publishes in its own frame. Fix either by
-  remapping/transforming the cloud into `base_link`, or by generalizing the
-  mapper's TF lookup to use `msg.header.frame_id` (small change — flag it).
-- **LiDAR extrinsic**: the static `base_link→lidar` TF in the launch is a
-  placeholder `[0,0,0.3]` (sim value). Set the real mounted pose.
+- **LiDAR frame**: SOLVED — `traversability_mapper` now uses the cloud's
+  `header.frame_id` for the TF lookup, so it works directly with `hesai_lidar`
+  (sim `base_link` still fine). Just needs the TF chain `odom→base_link→hesai_lidar`.
+- **LiDAR topic**: confirm the Hesai driver's actual topic with `ros2 topic list`
+  and pass it via `pointcloud_topic:=...` (default `/hesai_node/points_raw`).
+- **LiDAR extrinsic**: the static `base_link→hesai_lidar` TF in the launch is a
+  placeholder `[0,0,0.3]`. **Measure/calibrate** the real Hesai mounting pose
+  (x,y,z + orientation) on the GO2-W.
 - **Quaternion / velocity conventions**: assumed Unitree quat `[w,x,y,z]` and
   body-frame `velocity`. Verify on hardware (param `velocity_in_body`).
 - **Robot mode**: `Move` only takes effect in the right sport/locomotion mode.
@@ -139,8 +145,9 @@ lifecycle autostart), + RViz.
 
 ## 7. Open questions for the researcher
 
-1. Which **3D LiDAR** is mounted, what **topic** does it publish, and what is
-   the **mounting transform** to `base_link`?
+1. LiDAR = **Hesai PandarXT-16** (koki67/go2w-hesai-lidar-driver), topic
+   `/hesai_node/points_raw`, frame `hesai_lidar` — please **confirm the topic**
+   and give the **mounting transform** (`base_link→hesai_lidar`) for calibration.
 2. What **sport/locomotion mode** must the go2w be in for stair-capable walking,
    and is a programmatic mode switch available (api_id) or done via the app?
 3. Are the `/sportmodestate` `position`/`velocity` good enough as odometry, or
