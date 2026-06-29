@@ -113,11 +113,16 @@ class TraversabilityMapper(Node):
         xyz = np.stack([x, y, z], axis=1)
         return xyz[np.isfinite(xyz).all(axis=1)]
 
-    def _lookup_base_to_odom(self):
-        """Retourne (t[3], R[3,3]) de base_link vers odom, ou None."""
+    def _lookup_cloud_to_odom(self, cloud_frame):
+        """Retourne (t[3], R[3,3]) de `cloud_frame` vers odom, ou None.
+
+        On utilise la frame du nuage (msg.header.frame_id) et non 'base_link'
+        en dur : en sim le nuage est en base_link, sur le vrai robot il est dans
+        la frame du LiDAR (ex. 'hesai_lidar'). La TF odom<-base_link<-lidar est
+        composee automatiquement par tf2 (cf TF statique base_link->lidar)."""
         try:
             tf = self.tf_buffer.lookup_transform(
-                'odom', 'base_link', rclpy.time.Time())
+                'odom', cloud_frame, rclpy.time.Time())
         except (LookupException, ConnectivityException,
                 ExtrapolationException):
             return None
@@ -137,17 +142,18 @@ class TraversabilityMapper(Node):
             return
         msg = self._latest
 
-        tf = self._lookup_base_to_odom()
+        cloud_frame = msg.header.frame_id or 'base_link'
+        tf = self._lookup_cloud_to_odom(cloud_frame)
         if tf is None:
             return
         t_vec, R = tf
 
-        pts_base = self._parse_xyz(msg)
-        if len(pts_base) == 0:
+        pts_cloud = self._parse_xyz(msg)
+        if len(pts_cloud) == 0:
             return
 
-        # base_link -> odom
-        pts = (R @ pts_base.T).T + t_vec
+        # frame du LiDAR (ou base_link en sim) -> odom
+        pts = (R @ pts_cloud.T).T + t_vec
 
         # Filtre vertical
         m = (pts[:, 2] > Z_MIN) & (pts[:, 2] < Z_MAX)

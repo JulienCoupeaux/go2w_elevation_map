@@ -35,6 +35,7 @@ def generate_launch_description():
     rviz_config = os.path.join(bringup_dir, 'rviz', 'go2w_mppi.rviz')
 
     use_rviz = LaunchConfiguration('use_rviz')
+    pointcloud_topic = LaunchConfiguration('pointcloud_topic')
 
     lifecycle_nodes = [
         'controller_server',
@@ -45,6 +46,10 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('use_rviz', default_value='true'),
+        # Topic du nuage LiDAR Hesai (PandarXT-16). VERIFIER sur le robot avec
+        # `ros2 topic list` — driver koki67/go2w-hesai-lidar-driver, frame 'hesai_lidar'.
+        DeclareLaunchArgument('pointcloud_topic',
+                              default_value='/hesai_node/points_raw'),
 
         # ── Localisation : etat Unitree -> odom + TF ─────────────────
         Node(
@@ -70,25 +75,27 @@ def generate_launch_description():
             output='screen',
         ),
 
-        # ── TF statique base_link->lidar (extrinseque LiDAR — A CALIBRER) ──
-        # En sim le lidar etait a [0,0,0.3]. Mettre ici la vraie pose montee.
+        # ── TF statique base_link->hesai_lidar (extrinseque LiDAR — A CALIBRER) ──
+        # Pose de montage REELLE du Hesai sur le go2w. Valeur [0,0,0.3] = simple
+        # placeholder ; mesurer/calibrer x,y,z + orientation sur le robot.
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
             name='static_base_lidar',
-            arguments=['0', '0', '0.3', '0', '0', '0', 'base_link', 'lidar'],
+            arguments=['0', '0', '0.3', '0', '0', '0', 'base_link', 'hesai_lidar'],
             output='screen',
         ),
 
-        # ── Perception 2.5D (INCHANGE) ───────────────────────────────
-        # NB: traversability_mapper suppose le nuage en frame base_link.
-        # Si le LiDAR publie dans 'lidar', remapper /pointcloud vers un nuage
-        # deja en base_link, ou generaliser le TF lookup du mapper (cf doc).
+        # ── Perception 2.5D ──────────────────────────────────────────
+        # Le mapper lit la frame du nuage (msg.header.frame_id), donc le nuage
+        # peut etre en 'hesai_lidar' : tf2 compose odom<-base_link<-hesai_lidar.
+        # On remappe /pointcloud vers le topic reel du driver Hesai.
         Node(
             package='go2w_perception',
             executable='traversability_mapper',
             name='traversability_mapper',
             output='screen',
+            remappings=[('/pointcloud', pointcloud_topic)],
         ),
 
         # ── Commande : cmd_vel Nav2 -> Unitree Move ──────────────────
