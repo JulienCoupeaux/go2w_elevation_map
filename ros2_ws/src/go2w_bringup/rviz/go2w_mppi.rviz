@@ -1,0 +1,142 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+    Property Tree Widget:
+      Expanded: ~
+      Splitter Ratio: 0.5
+  - Class: nav2_rviz_plugins/Navigation 2
+    Name: Navigation 2
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Color: 160; 160; 164
+      Plane Cell Count: 40
+      Reference Frame: <Fixed Frame>
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: true
+      Show Names: true
+      Marker Scale: 0.6
+    - Class: grid_map_rviz_plugin/GridMap
+      Name: GridMap 2.5D
+      Enabled: true
+      Topic:
+        Value: /traversability/grid_map
+        Depth: 1
+        Durability Policy: Volatile
+        Reliability Policy: Reliable
+      Height Layer: elevation
+      Color Layer: traversability
+      Use Rainbow: true
+      Invert Rainbow: true
+      Min Color Value: 0
+      Max Color Value: 100
+      Autocompute Intensity Bounds: false
+      Show Grid Lines: false
+      Height Transformer: GridMapLayer
+      Color Transformer: IntensityLayer
+    - Class: rviz_default_plugins/Map
+      Name: Traversability Costmap
+      Enabled: true
+      Topic:
+        Value: /traversability/costmap
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+      Color Scheme: costmap
+      Alpha: 0.6
+    - Class: rviz_default_plugins/Map
+      Name: Global Costmap
+      Enabled: false
+      Topic:
+        Value: /global_costmap/costmap
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+      Color Scheme: costmap
+      Alpha: 0.5
+    - Class: rviz_default_plugins/Map
+      Name: Local Costmap
+      Enabled: true
+      Topic:
+        Value: /local_costmap/costmap
+        Durability Policy: Volatile
+        Reliability Policy: Reliable
+      Color Scheme: costmap
+      Alpha: 0.5
+    - Class: rviz_default_plugins/Path
+      Name: Global Plan
+      Enabled: true
+      Topic:
+        Value: /plan
+        Reliability Policy: Reliable
+      Color: 0; 12; 255
+      Line Style: Lines
+    - Class: rviz_default_plugins/Path
+      Name: MPPI Local Plan
+      Enabled: true
+      Topic:
+        Value: /local_plan
+        Reliability Policy: Reliable
+      Color: 0; 255; 0
+      Line Style: Billboards
+      Line Width: 0.05
+    - Class: rviz_default_plugins/MarkerArray
+      Name: MPPI Trajectories
+      Enabled: true
+      Topic:
+        Value: /trajectories
+        Reliability Policy: Reliable
+    - Class: rviz_default_plugins/PointCloud2
+      Name: LiDAR
+      Enabled: false
+      Topic:
+        Value: /pointcloud
+        Reliability Policy: Best Effort
+      Size (m): 0.02
+      Style: Points
+      Color: 200; 200; 255
+    - Class: rviz_default_plugins/PointCloud2
+      Name: Obstacles 2.5D
+      Enabled: true
+      Topic:
+        Value: /traversability/obstacles
+        Reliability Policy: Reliable
+      Size (m): 0.08
+      Style: Boxes
+      Color: 255; 0; 0
+    - Class: rviz_default_plugins/Odometry
+      Name: Odometry
+      Enabled: false
+      Topic:
+        Value: /odom
+        Reliability Policy: Reliable
+      Keep: 1
+      Shape:
+        Value: Arrow
+  Global Options:
+    Fixed Frame: map
+    Background Color: 48; 48; 48
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
+    - Class: rviz_default_plugins/Measure
+    - Class: nav2_rviz_plugins/GoalTool
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Name: Current View
+      Distance: 14.0
+      Pitch: 0.8
+      Yaw: 3.1
+      Focal Point:
+        X: 1.5
+        Y: 0.0
+        Z: 0.0
+Window Geometry:
+  Height: 900
+  Width: 1500
+  Displays:
+    collapsed: false

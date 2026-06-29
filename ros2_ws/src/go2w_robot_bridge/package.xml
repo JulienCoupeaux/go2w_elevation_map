@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>go2w_robot_bridge</name>
+  <version>0.0.1</version>
+  <description>Ponts ROS&lt;-&gt;Unitree pour le VRAI go2w : /sportmodestate-&gt;odom et cmd_vel-&gt;sport Move. Permet de faire tourner la stack Nav2/MPPI 2.5D sur le robot reel (locomotion par la policy embarquee).</description>
+  <maintainer email="juliencoupeaux@gmail.com">julien</maintainer>
+  <license>Apache-2.0</license>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>unitree_go</exec_depend>
+  <exec_depend>unitree_api</exec_depend>
+  <exec_depend>go2w_perception</exec_depend>
+  <exec_depend>go2w_navigation</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

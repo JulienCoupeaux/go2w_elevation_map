@@ -1,0 +1,71 @@
+{
+	"name": "GO2-W Docker Dev GPU",
+	// Configure the Docker build
+	"build": {
+		"context": "..",
+		"dockerfile": "../Dockerfile"
+	},
+
+	// Arguments to run the container
+	"runArgs": [
+		// Use host network (essential for communication with the robot)
+		"--network=host",
+
+		// Allow real-time scheduling (recommended for performance)
+		"--cap-add=SYS_NICE",
+
+		// Expose all host GPUs to the container
+		"--gpus=all",
+
+		// --- GUI Display Support (X11) ---
+        // Mount the X11 Unix-domain socket for graphical interface communication
+        "-v=/tmp/.X11-unix:/tmp/.X11-unix:rw",
+        // Mount Xauthority to allow the container to authenticate with the host's X server
+        "-v=${env:HOME}/.Xauthority:/root/.Xauthority:rw",
+
+        // --- GUI Display Support (Wayland) ---
+        // Mount the Wayland socket. This path is used by modern Linux distros (e.g., Ubuntu 22.04+)
+        // If the host is not using Wayland, this mount might be ignored or create an empty dir.
+        "-v=${env:XDG_RUNTIME_DIR}/${env:WAYLAND_DISPLAY}:/tmp/wayland-0:rw"
+	],
+
+	// Environment variables available inside the container.
+	// The user should change UNITREE_NETWORK_INTERFACE to match their host machine.
+	"containerEnv": {
+		// Network interface name for robot communication
+		"UNITREE_NETWORK_INTERFACE": "enp97s0",
+
+		// Pass the DISPLAY variable to tell X11 apps which screen to use
+        "DISPLAY": "${localEnv:DISPLAY}",
+        // Direct Wayland applications to the mounted socket inside the container
+        "WAYLAND_DISPLAY": "wayland-0",
+        // Define the runtime directory where the Wayland socket is located
+        "XDG_RUNTIME_DIR": "/tmp",
+        // --- Compatibility Fixes ---
+        // Fix for "MIT-SHM" errors that sometimes occur when running GUI apps in Docker
+        "QT_X11_NO_MITSHM": "1",
+		// Force hardware acceleration for OpenGL (important for RViz2)
+        "LIBGL_ALWAYS_SOFTWARE": "0"
+	},
+
+	// Workspace to open when connecting to the container with VS Code
+	"workspaceFolder": "/workspace",
+
+	// Explicitly mount the local workspace folder to the container's /workspace
+	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+
+	// Recommended VS Code extensions inside the container
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-vscode.cpptools",
+				"ms-vscode.cmake-tools",
+				"google.geminicodeassist",
+				"ms-azuretools.vscode-containers"
+			]
+		}
+	},
+
+	// Command to run after the container is created
+	"postCreateCommand": "bash /workspace/.devcontainer/post-create.sh"
+}

@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>go2w_navigation</name>
+  <version>0.1.0</version>
+  <description>Bringup et config Nav2 MPPI sur costmap 2.5D pour le go2w</description>
+  <maintainer email="you@todo.com">Julien</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>go2w_perception</exec_depend>
+  <exec_depend>nav2_controller</exec_depend>
+  <exec_depend>nav2_mppi_controller</exec_depend>
+  <exec_depend>nav2_planner</exec_depend>
+  <exec_depend>nav2_behaviors</exec_depend>
+  <exec_depend>nav2_bt_navigator</exec_depend>
+  <exec_depend>nav2_lifecycle_manager</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
